@@ -16,6 +16,20 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _checkIfVibrate();
+    animationController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 5),
+    );
+
+    animationController.repeat();
+  }
+
+  stopRotation() {
+    animationController.stop();
+  }
+
+  startRotation() {
+    animationController.repeat();
   }
 
   _checkIfVibrate() async {
@@ -78,12 +92,21 @@ class _HomeScreenState extends State<HomeScreen>
             height: screenHeight / 21,
           ),
           Center(
-            child: CircleAvatar(
-              backgroundColor: Colors.transparent,
-              radius: circleRadius,
-              child: Image.asset(
-                'assets/music.png',
-                height: imageSize,
+            child: AnimatedBuilder(
+              animation: animationController,
+              builder: (BuildContext context, Widget _widget) {
+                return Transform.rotate(
+                  angle: animationController.value * 6.3,
+                  child: _widget,
+                );
+              },
+              child: CircleAvatar(
+                backgroundColor: Colors.transparent,
+                radius: circleRadius,
+                child: Image.asset(
+                  'assets/music.png',
+                  height: imageSize,
+                ),
               ),
             ),
           ),
@@ -150,12 +173,19 @@ class _HomeScreenState extends State<HomeScreen>
                     onPressed: () {
                       print('play');
                       _getVibration(FeedbackType.light);
-                      setState(() {
-                        if (icon == Icons.play_arrow) {
+
+                      if (icon == Icons.play_arrow) {
+                        startRotation();
+                        setState(() {
                           icon = Icons.pause;
-                        } else
+                        });
+                      } else {
+                        setState(() {
                           icon = Icons.play_arrow;
-                      });
+                        });
+
+                        stopRotation();
+                      }
                     },
                     padding: EdgeInsets.all(10),
                     shape: CircleBorder(),
