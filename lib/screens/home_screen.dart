@@ -19,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen>
   AudioPlayer audioPlayer = AudioPlayer();
   @override
   void initState() {
-    // getSongs();
+    getSongs();
     super.initState();
 
     animationController = AnimationController(
@@ -76,9 +76,9 @@ class _HomeScreenState extends State<HomeScreen>
     songs = await audioQuery.getSongs();
     songsLength = songs.length;
     if (songs.isNotEmpty) {
-      await getSong();
+      //await getSong();
       print('done');
-      return song;
+      //return song;
     }
   }
 
@@ -163,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       body: SafeArea(
           child: FutureBuilder(
-              future: getSongs(),
+              future: getSong(),
               builder: (context, futureSnapshot) {
                 if (futureSnapshot.hasData) {
                   if (audioPlayer.state == AudioPlayerState.COMPLETED) {
@@ -261,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen>
                         StreamBuilder<Duration>(
                             stream: audioPlayer.onAudioPositionChanged,
                             builder: (context, snapshot) {
-                              String startSecond='';
+                              String startSecond = '';
                               if (snapshot.hasData) {
                                 if (audioPlayer.state ==
                                     AudioPlayerState.COMPLETED) playNext();
