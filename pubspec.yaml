@@ -28,6 +28,7 @@ dependencies:
   permission_handler: ^5.0.0+hotfix.2
   audioplayers: ^0.14.2
   animated_text_kit: ^2.0.0
+  path_provider:
 
 
 dev_dependencies:

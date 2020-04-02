@@ -71,17 +71,6 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         AlignmentDirectional.topStart // or Alignment.topLeft
                     ),
               ),
-              FlatButton(
-                child: Text(
-                  'Continue',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return HomeScreen();
-                  }));
-                },
-              )
             ],
           ),
         ),
