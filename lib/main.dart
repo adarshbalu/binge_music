@@ -1,5 +1,4 @@
 import 'package:bingemusic/screens/home_screen.dart';
-import 'package:bingemusic/screens/loading_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());

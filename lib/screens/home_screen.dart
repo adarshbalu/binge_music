@@ -1,7 +1,9 @@
 import 'dart:math';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:vibrate/vibrate.dart';
 import 'package:flutter_audio_query/flutter_audio_query.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -19,9 +21,9 @@ class _HomeScreenState extends State<HomeScreen>
   AudioPlayer audioPlayer = AudioPlayer();
   @override
   void initState() {
-    getSongs();
     super.initState();
-
+    checkPermissions();
+    _checkIfVibrate();
     animationController = AnimationController(
       vsync: this,
       duration: Duration(seconds: 5),
@@ -51,6 +53,24 @@ class _HomeScreenState extends State<HomeScreen>
     Vibrate.feedback(feedbackType);
   }
 
+  checkPermissions() async {
+    if (await Permission.storage.request().isGranted) {
+      // Either the permission was already granted before or the user just granted it.
+    }
+
+// You can request multiple permissions at once.
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.storage,
+    ].request();
+    print(statuses[Permission.storage]);
+  }
+
+  _checkIfVibrate() async {
+    canVibrate = await Vibrate.canVibrate;
+  }
+
+  bool canVibrate = false;
+
   IconData icon = Icons.play_arrow;
   List<SongInfo> songs;
   int songsLength;
@@ -61,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen>
   double tempMinutes;
   String localPath;
   bool isStart = false;
-
   Duration songDuration;
   double duration = 500;
   String songName = 'Song Name';
@@ -71,52 +90,40 @@ class _HomeScreenState extends State<HomeScreen>
   final _random = new Random();
   int startSeconds = 0;
   int endSeconds = 0;
-
-  Future getSongs() async {
-    songs = await audioQuery.getSongs();
-    songsLength = songs.length;
-    if (songs.isNotEmpty) {
-      //await getSong();
-      print('done');
-      //return song;
-    }
-  }
-
+  bool loaded = false;
+  Color color = Colors.transparent;
   bool firstRun = false;
-  Future<SongInfo> getSong() async {
-    //songs = await getSongs();
-    if (firstRun) {
-      setState(() {
+
+  // ignore: missing_return
+  Future<SongInfo> getSongs() async {
+    if (!loaded) {
+      print('load songs');
+      songs = await audioQuery.getSongs();
+      songsLength = songs.length;
+      loaded = true;
+      print('done');
+    }
+    if (songs.isNotEmpty) {
+      if (audioPlayer.state == AudioPlayerState.PAUSED ||
+          audioPlayer.state == AudioPlayerState.PLAYING) {
+        return song;
+      } else if (audioPlayer.state == AudioPlayerState.COMPLETED) {
+        playNext();
+        return song;
+      } else if (audioPlayer.state == AudioPlayerState.STOPPED) {
+        startMusic();
+        return song;
+      } else {
         song = songs[_random.nextInt(songsLength)];
         localPath = song.filePath;
-        artistName = song.artist;
-        songName = song.artist;
-      });
-      audioPlayer.setUrl(localPath, isLocal: true);
-      firstRun = false;
-      return song;
+        setState(() {
+          artistName = song.artist;
+          songName = song.artist;
+        });
+        audioPlayer.setUrl(localPath, isLocal: true);
+        return song;
+      }
     }
-
-    if (audioPlayer.state == AudioPlayerState.PAUSED ||
-        audioPlayer.state == AudioPlayerState.PLAYING) {
-      setState(() {
-        artistName = song.artist;
-        songName = song.title;
-      });
-      return song;
-    } else if (audioPlayer.state == AudioPlayerState.COMPLETED) {
-      playNext();
-    } else {
-      song = songs[_random.nextInt(songsLength)];
-      localPath = song.filePath;
-      setState(() {
-        artistName = song.artist;
-        songName = song.artist;
-      });
-      audioPlayer.setUrl(localPath, isLocal: true);
-      return song;
-    }
-    return song;
   }
 
   startMusic() async {
@@ -133,17 +140,20 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Color color = Colors.transparent;
   playNext() async {
+    audioPlayer.stop();
     stopRotation();
     setState(() {
       color = Colors.white;
     });
-    audioPlayer.stop();
-    SongInfo tempSong;
-    tempSong = songs[_random.nextInt(songsLength)];
+    do {
+      song = songs[_random.nextInt(songsLength)];
+    } while (!song.isMusic ||
+        song.isNotification ||
+        song.isAlarm ||
+        song.isPodcast ||
+        song.isRingtone);
     setState(() {
-      song = tempSong;
       localPath = song.filePath;
       isPlaying = true;
       artistName = song.artist;
@@ -159,19 +169,15 @@ class _HomeScreenState extends State<HomeScreen>
     double circleRadius = MediaQuery.of(context).size.width / 3;
     double imageSize = MediaQuery.of(context).size.width / 1.5;
     double screenWidth = MediaQuery.of(context).size.width;
-//    double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       body: SafeArea(
           child: FutureBuilder(
-              future: getSong(),
+              future: getSongs(),
               builder: (context, futureSnapshot) {
                 if (futureSnapshot.hasData) {
                   if (audioPlayer.state == AudioPlayerState.COMPLETED) {
-                    return Scaffold(
-                      body: Center(
-                        child: Text('please wait'),
-                      ),
-                    );
+                    playNext();
+                    return LoadScreen();
                   } else
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -261,7 +267,8 @@ class _HomeScreenState extends State<HomeScreen>
                         StreamBuilder<Duration>(
                             stream: audioPlayer.onAudioPositionChanged,
                             builder: (context, snapshot) {
-                              String startSecond = '';
+                              String startSecond;
+                              startSecond = ' ';
                               if (snapshot.hasData) {
                                 if (audioPlayer.state ==
                                     AudioPlayerState.COMPLETED) playNext();
@@ -325,25 +332,11 @@ class _HomeScreenState extends State<HomeScreen>
                                         ),
                                       ),
                                     ),
-                                    Text(
-                                      (songDuration.inMinutes / 2)
-                                              .ceil()
-                                              .toString() +
-                                          ':' +
-                                          (songDuration.inSeconds / 2)
-                                              .ceil()
-                                              .toString()
-                                              .substring(
-                                                  0,
-                                                  (songDuration.inSeconds)
-                                                          .toString()
-                                                          .length -
-                                                      1),
-                                      style: TextStyle(color: Colors.white),
-                                    )
                                   ],
                                 );
                               } else {
+                                if (audioPlayer.state ==
+                                    AudioPlayerState.COMPLETED) playNext();
                                 return Row(
                                   children: <Widget>[
                                     Text('0:0',
@@ -370,8 +363,6 @@ class _HomeScreenState extends State<HomeScreen>
                                         ),
                                       ),
                                     ),
-                                    Text('5:00',
-                                        style: TextStyle(color: Colors.white))
                                   ],
                                 );
                               }
@@ -489,41 +480,55 @@ class _HomeScreenState extends State<HomeScreen>
                       ],
                     );
                 } else {
-                  return Scaffold(
-                    body: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Container(
-                            margin: EdgeInsets.only(bottom: 30),
-                            child: Text(
-                              'Binge Music',
-                              style: TextStyle(
-                                  fontSize: 60,
-                                  color: Colors.white,
-                                  fontFamily: 'satisfy'),
-                            ),
-                          ),
-                          !futureSnapshot.hasData
-                              ? Text(
-                                  'Please wait . Loading songs',
-                                  style: TextStyle(color: Colors.white),
-                                )
-                              : GestureDetector(
-                                  child: Text(
-                                    'Tap to play',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  onTap: () {
-                                    getSong();
-                                  },
-                                ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return LoadScreen();
                 }
               })),
     );
   }
+}
+
+class LoadScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Container(
+            child: Text(
+              'Binge Music',
+              style: TextStyle(
+                  fontSize: 60, color: Colors.white, fontFamily: 'satisfy'),
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.only(top: 10, bottom: 10),
+            width: 260,
+            child: TypewriterAnimatedTextKit(
+                totalRepeatCount: 4,
+                speed: Duration(milliseconds: 500),
+                pause: Duration(milliseconds: 1000),
+                text: [
+                  'The Music Player',
+                  'Minimal Music',
+                ],
+                textStyle: TextStyle(
+                    fontSize: 30.0, color: Colors.white, fontFamily: "satisfy"),
+                textAlign: TextAlign.start,
+                alignment: AlignmentDirectional.topStart // or Alignment.topLeft
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class Song{
+  SongInfo song;
+  String songName;
+  String artistName;
+  String albumArt;
+
+  Song({this.song,this.songName,this.artistName,});
 }
