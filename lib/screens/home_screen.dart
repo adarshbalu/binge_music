@@ -74,10 +74,10 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
 // You can request multiple permissions at once.
-    Map<Permission, PermissionStatus> statuses = await [
+    Map<Permission, PermissionStatus> statuses;
+    statuses = await [
       Permission.storage,
     ].request();
-    print(statuses[Permission.storage]);
   }
 
   _checkIfVibrate() async {
@@ -87,7 +87,6 @@ class _HomeScreenState extends State<HomeScreen>
   // ignore: missing_return
   Future<Song> getSongs() async {
     if (!loaded) {
-      print('load songs');
       songs = await audioQuery.getSongs();
       songsLength = songs.length;
       _song = songs[_random.nextInt(songsLength)];
@@ -97,7 +96,6 @@ class _HomeScreenState extends State<HomeScreen>
             Song(song: _song, songName: _song.title, artistName: _song.artist);
         loaded = true;
       });
-      print('done');
       return song;
     } else {
       if (songs.isNotEmpty) {
@@ -156,8 +154,8 @@ class _HomeScreenState extends State<HomeScreen>
         isPlaying = true;
         song.artistName = song.song.artist;
         song.songName = song.song.title;
-        startRotation();
       });
+      startRotation();
     } else {
       song.song = _song;
       song.localPath = song.song.filePath;
@@ -165,6 +163,7 @@ class _HomeScreenState extends State<HomeScreen>
       song.artistName = song.song.artist;
       song.songName = song.song.title;
       startRotation();
+      setState(() {});
     }
     startMusic();
   }
@@ -398,7 +397,6 @@ class _HomeScreenState extends State<HomeScreen>
                                   splashColor: Color(0xff42002E),
                                   shape: CircleBorder(),
                                   onPressed: () async {
-                                    print('repeat');
                                     _getVibration(FeedbackType.light);
                                     await audioPlayer.stop();
                                     setState(() {
@@ -424,7 +422,6 @@ class _HomeScreenState extends State<HomeScreen>
                                         onPressed: () async {
                                           _getVibration(FeedbackType.light);
                                           startRotation();
-                                          print('playing');
                                           if (audioPlayer.state ==
                                               AudioPlayerState.PAUSED)
                                             await audioPlayer.resume();
@@ -449,7 +446,6 @@ class _HomeScreenState extends State<HomeScreen>
                                       )
                                     : MaterialButton(
                                         onPressed: () async {
-                                          print('pause');
                                           await audioPlayer.pause();
                                           _getVibration(FeedbackType.light);
                                           stopRotation();
@@ -476,7 +472,6 @@ class _HomeScreenState extends State<HomeScreen>
                                   splashColor: Color(0xff42002E),
                                   shape: CircleBorder(),
                                   onPressed: () async {
-                                    print('nxt');
                                     _getVibration(FeedbackType.light);
                                     playNext();
                                   },
