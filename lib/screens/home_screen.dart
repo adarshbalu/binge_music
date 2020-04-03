@@ -18,7 +18,30 @@ class _HomeScreenState extends State<HomeScreen>
   AnimationController animationController;
   Animation animation;
   final FlutterAudioQuery audioQuery = FlutterAudioQuery();
+  bool canVibrate = false;
+  IconData icon = Icons.play_arrow;
+  List<SongInfo> songs;
+  int songsLength;
+  String image = 'assets/music.png';
+  SongInfo _song;
+  double tempDuration;
+  double tempSeconds;
+  double tempMinutes;
+  bool isStart = false;
+  Duration songDuration;
+  double duration = 500;
+  bool isPlaying = false;
+  double value = 0.0;
+  final _random = new Random();
+  int startSeconds = 0;
+  int endSeconds = 0;
+  bool loaded = false;
+  Color color = Colors.transparent;
+  bool firstRun = false;
   AudioPlayer audioPlayer = AudioPlayer();
+  Song song;
+  String startSecond;
+
   @override
   void initState() {
     super.initState();
@@ -31,14 +54,6 @@ class _HomeScreenState extends State<HomeScreen>
     animationController.addListener(() {
       setState(() {});
     });
-  }
-
-  @override
-  void dispose() {
-    animationController.dispose();
-    audioPlayer.stop();
-    audioPlayer.dispose();
-    super.dispose();
   }
 
   stopRotation() {
@@ -69,71 +84,55 @@ class _HomeScreenState extends State<HomeScreen>
     canVibrate = await Vibrate.canVibrate;
   }
 
-  bool canVibrate = false;
-
-  IconData icon = Icons.play_arrow;
-  List<SongInfo> songs;
-  int songsLength;
-  String image = 'assets/music.png';
-  SongInfo song;
-  double tempDuration;
-  double tempSeconds;
-  double tempMinutes;
-  String localPath;
-  bool isStart = false;
-  Duration songDuration;
-  double duration = 500;
-  String songName = 'Song Name';
-  String artistName = 'Artist Name';
-  bool isPlaying = false;
-  double value = 0.0;
-  final _random = new Random();
-  int startSeconds = 0;
-  int endSeconds = 0;
-  bool loaded = false;
-  Color color = Colors.transparent;
-  bool firstRun = false;
-
   // ignore: missing_return
-  Future<SongInfo> getSongs() async {
+  Future<Song> getSongs() async {
     if (!loaded) {
       print('load songs');
       songs = await audioQuery.getSongs();
       songsLength = songs.length;
-      loaded = true;
+      _song = songs[_random.nextInt(songsLength)];
+
+      setState(() {
+        song =
+            Song(song: _song, songName: _song.title, artistName: _song.artist);
+        loaded = true;
+      });
       print('done');
-    }
-    if (songs.isNotEmpty) {
-      if (audioPlayer.state == AudioPlayerState.PAUSED ||
-          audioPlayer.state == AudioPlayerState.PLAYING) {
-        return song;
-      } else if (audioPlayer.state == AudioPlayerState.COMPLETED) {
-        playNext();
-        return song;
-      } else if (audioPlayer.state == AudioPlayerState.STOPPED) {
-        startMusic();
-        return song;
-      } else {
-        song = songs[_random.nextInt(songsLength)];
-        localPath = song.filePath;
-        setState(() {
-          artistName = song.artist;
-          songName = song.artist;
-        });
-        audioPlayer.setUrl(localPath, isLocal: true);
-        return song;
+      return song;
+    } else {
+      if (songs.isNotEmpty) {
+        if (audioPlayer.state == AudioPlayerState.PAUSED ||
+            audioPlayer.state == AudioPlayerState.PLAYING) {
+          return song;
+        } else if (audioPlayer.state == AudioPlayerState.COMPLETED) {
+          playNext();
+          return song;
+        } else if (audioPlayer.state == AudioPlayerState.STOPPED) {
+          startMusic();
+          return song;
+        } else {
+          song.song = songs[_random.nextInt(songsLength)];
+          song.localPath = song.song.filePath;
+          setState(() {
+            song.artistName = song.song.artist;
+            song.songName = song.song.artist;
+          });
+          audioPlayer.setUrl(song.localPath, isLocal: true);
+          return song;
+        }
       }
     }
   }
 
   startMusic() async {
-    int play = await audioPlayer.play(localPath, isLocal: true);
-    tempDuration = double.parse(song.duration);
+    int play = await audioPlayer.play(song.localPath, isLocal: true);
+    tempDuration = double.parse(song.song.duration);
     tempSeconds = (tempDuration / 1000);
     tempMinutes = tempDuration / 60000;
     if (play == 1) {
       isStart = true;
       setState(() {
+        isPlaying = true;
         songDuration = Duration(
             seconds: tempSeconds.toInt(), minutes: tempMinutes.toInt());
       });
@@ -141,26 +140,32 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   playNext() async {
-    audioPlayer.stop();
+    await audioPlayer.stop();
     stopRotation();
-    setState(() {
-      color = Colors.white;
-    });
     do {
-      song = songs[_random.nextInt(songsLength)];
-    } while (!song.isMusic ||
-        song.isNotification ||
-        song.isAlarm ||
-        song.isPodcast ||
-        song.isRingtone);
-    setState(() {
-      localPath = song.filePath;
+      _song = songs[_random.nextInt(songsLength)];
+    } while (!_song.isMusic ||
+        _song.isNotification ||
+        _song.isAlarm ||
+        _song.isPodcast ||
+        _song.isRingtone);
+    if (audioPlayer.state == AudioPlayerState.COMPLETED) {
+      setState(() {
+        song.song = _song;
+        song.localPath = song.song.filePath;
+        isPlaying = true;
+        song.artistName = song.song.artist;
+        song.songName = song.song.title;
+        startRotation();
+      });
+    } else {
+      song.song = _song;
+      song.localPath = song.song.filePath;
       isPlaying = true;
-      artistName = song.artist;
-      songName = song.title;
-      color = Colors.transparent;
+      song.artistName = song.song.artist;
+      song.songName = song.song.title;
       startRotation();
-    });
+    }
     startMusic();
   }
 
@@ -177,7 +182,15 @@ class _HomeScreenState extends State<HomeScreen>
                 if (futureSnapshot.hasData) {
                   if (audioPlayer.state == AudioPlayerState.COMPLETED) {
                     playNext();
-                    return LoadScreen();
+                    return Container(
+                      child: Text(
+                        'Binge Music',
+                        style: TextStyle(
+                            fontSize: 60,
+                            color: Colors.white,
+                            fontFamily: 'satisfy'),
+                      ),
+                    );
                   } else
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -191,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen>
                               Padding(
                                 padding: EdgeInsets.all(5),
                                 child: Text(
-                                  songName,
+                                  song.songName,
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 28,
@@ -201,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen>
                               Padding(
                                 padding: EdgeInsets.only(top: 5.0),
                                 child: Text(
-                                  artistName,
+                                  song.artistName,
                                   style: TextStyle(
                                     color: Colors.white70,
                                     fontWeight: FontWeight.w400,
@@ -216,17 +229,17 @@ class _HomeScreenState extends State<HomeScreen>
                           flex: 3,
                           child: Center(
                             child: GestureDetector(
-                              onTap: () {
+                              onTap: () async {
                                 if (audioPlayer.state ==
                                     AudioPlayerState.PLAYING) {
-                                  audioPlayer.pause();
+                                  await audioPlayer.pause();
                                   setState(() {
                                     isPlaying = false;
                                     stopRotation();
                                   });
                                 } else if (audioPlayer.state ==
                                     AudioPlayerState.PAUSED) {
-                                  audioPlayer.resume();
+                                  await audioPlayer.resume();
                                   setState(() {
                                     isPlaying = true;
                                     startRotation();
@@ -237,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   isPlaying = true;
                                   startRotation();
                                 } else {
-                                  startMusic();
+                                  await startMusic();
                                   isPlaying = true;
                                   startRotation();
                                 }
@@ -267,7 +280,6 @@ class _HomeScreenState extends State<HomeScreen>
                         StreamBuilder<Duration>(
                             stream: audioPlayer.onAudioPositionChanged,
                             builder: (context, snapshot) {
-                              String startSecond;
                               startSecond = ' ';
                               if (snapshot.hasData) {
                                 if (audioPlayer.state ==
@@ -282,17 +294,22 @@ class _HomeScreenState extends State<HomeScreen>
                                 return Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[
-                                    Text(
-                                      snapshot.data.inMinutes.toString() +
-                                          ':' +
-                                          startSeconds.toString(),
-                                      style: TextStyle(color: Colors.white),
+                                    Padding(
+                                      padding: EdgeInsets.only(left: 5.0),
+                                      child: Text(
+                                        snapshot.data.inMinutes.toString() +
+                                            ':' +
+                                            startSeconds.toString(),
+                                        style: TextStyle(
+                                            letterSpacing: 1.1,
+                                            color: Colors.white),
+                                      ),
                                     ),
                                     Expanded(
                                       child: SliderTheme(
                                         data: SliderTheme.of(context).copyWith(
                                           activeTrackColor: Colors.red[700],
-                                          inactiveTrackColor: Colors.red[100],
+                                          inactiveTrackColor: Colors.grey,
                                           trackHeight: 3.0,
                                           thumbColor: Colors.redAccent,
                                           thumbShape: RoundSliderThumbShape(
@@ -304,8 +321,10 @@ class _HomeScreenState extends State<HomeScreen>
                                         ),
                                         child: Slider(
                                           min: 0,
-                                          max: double.parse(song.duration) > 0
-                                              ? double.parse(song.duration)
+                                          max: double.parse(
+                                                      song.song.duration) >
+                                                  0
+                                              ? double.parse(song.song.duration)
                                               : 500,
                                           value: snapshot.data.inMilliseconds
                                                       .ceilToDouble() >
@@ -315,15 +334,15 @@ class _HomeScreenState extends State<HomeScreen>
                                               ? snapshot.data.inMilliseconds
                                                   .ceilToDouble()
                                               : 200,
-                                          onChanged: (v) {
+                                          onChanged: (v) async {
                                             stopRotation();
                                             setState(() {
                                               isPlaying = false;
                                             });
-                                            audioPlayer.pause();
-                                            audioPlayer.seek(Duration(
+                                            await audioPlayer.pause();
+                                            await audioPlayer.seek(Duration(
                                                 milliseconds: v.toInt()));
-                                            audioPlayer.resume();
+                                            await audioPlayer.resume();
                                             startRotation();
                                             setState(() {
                                               isPlaying = true;
@@ -378,15 +397,15 @@ class _HomeScreenState extends State<HomeScreen>
                                 child: MaterialButton(
                                   splashColor: Color(0xff42002E),
                                   shape: CircleBorder(),
-                                  onPressed: () {
+                                  onPressed: () async {
                                     print('repeat');
                                     _getVibration(FeedbackType.light);
-                                    audioPlayer.stop();
+                                    await audioPlayer.stop();
                                     setState(() {
                                       isPlaying = false;
                                     });
                                     stopRotation();
-                                    startMusic();
+                                    await startMusic();
                                     setState(() {
                                       isPlaying = true;
                                     });
@@ -408,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen>
                                           print('playing');
                                           if (audioPlayer.state ==
                                               AudioPlayerState.PAUSED)
-                                            audioPlayer.resume();
+                                            await audioPlayer.resume();
                                           else
                                             await startMusic();
                                           setState(() {
@@ -431,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen>
                                     : MaterialButton(
                                         onPressed: () async {
                                           print('pause');
-                                          audioPlayer.pause();
+                                          await audioPlayer.pause();
                                           _getVibration(FeedbackType.light);
                                           stopRotation();
                                           setState(() {
@@ -485,6 +504,14 @@ class _HomeScreenState extends State<HomeScreen>
               })),
     );
   }
+
+  @override
+  void dispose() {
+    animationController.dispose();
+    audioPlayer.stop();
+    audioPlayer.dispose();
+    super.dispose();
+  }
 }
 
 class LoadScreen extends StatelessWidget {
@@ -524,11 +551,16 @@ class LoadScreen extends StatelessWidget {
   }
 }
 
-class Song{
+class Song {
   SongInfo song;
   String songName;
   String artistName;
   String albumArt;
+  String localPath;
 
-  Song({this.song,this.songName,this.artistName,});
+  Song({
+    this.song,
+    this.songName,
+    this.artistName,
+  });
 }
