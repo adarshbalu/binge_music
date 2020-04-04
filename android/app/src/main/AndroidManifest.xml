@@ -1,6 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="live.adarshbalachandran.bingemusic">
-
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -13,7 +12,7 @@
     <application
         android:usesCleartextTraffic="true"
         android:name="io.flutter.app.FlutterApplication"
-        android:label="Binge Music"
+        android:label="BingeMusic"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

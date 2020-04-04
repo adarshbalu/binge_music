@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen>
   Color color = Colors.transparent;
   bool firstRun = false;
   AudioPlayer audioPlayer = AudioPlayer();
-  Song song;
+  Song song = Song(songName: '', artistName: '', localPath: '');
   String startSecond;
 
   @override
@@ -88,11 +88,8 @@ class _HomeScreenState extends State<HomeScreen>
     if (!loaded) {
       songs = await audioQuery.getSongs();
       songsLength = songs.length;
-      _song = songs[_random.nextInt(songsLength)];
-
+      song = await findSong();
       setState(() {
-        song =
-            Song(song: _song, songName: _song.title, artistName: _song.artist);
         loaded = true;
       });
       return song;
@@ -102,26 +99,21 @@ class _HomeScreenState extends State<HomeScreen>
             audioPlayer.state == AudioPlayerState.PLAYING) {
           return song;
         } else if (audioPlayer.state == AudioPlayerState.COMPLETED) {
-          print('future completed');
           playNext();
           return song;
         }
-        else {
-          setState(() {
-            song.song = songs[_random.nextInt(songsLength)];
-            song.localPath = song.song.filePath;
-
-            song.artistName = song.song.artist;
-            song.songName = song.song.artist;
-          });
-
-          return song;
-        }
+//        else {
+//           song= await findSong();
+//          return song;
+//        }
       }
+      return song;
     }
   }
 
   startMusic() async {
+    if (audioPlayer.state != AudioPlayerState.STOPPED)
+      await audioPlayer.pause();
     int play = await audioPlayer.play(song.localPath, isLocal: true);
     tempDuration = double.parse(song.song.duration);
     tempSeconds = (tempDuration / 1000);
@@ -135,8 +127,17 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   playNext() async {
-    await audioPlayer.stop();
     stopRotation();
+    song = await findSong();
+    setState(() {
+      isPlaying = true;
+    });
+    await startMusic();
+    startRotation();
+  }
+
+  Future<Song> findSong() async {
+    Song tempSong;
     do {
       _song = songs[_random.nextInt(songsLength)];
     } while (!_song.isMusic ||
@@ -145,16 +146,15 @@ class _HomeScreenState extends State<HomeScreen>
         _song.isPodcast ||
         _song.isRingtone);
 
-    startRotation();
     setState(() {
-      song.song = _song;
-      song.localPath = song.song.filePath;
-      isPlaying = true;
-      song.artistName = song.song.artist;
-      song.songName = song.song.title;
+      tempSong = Song(
+          song: _song,
+          songName: _song.title,
+          artistName: _song.artist,
+          localPath: _song.filePath);
     });
-    print('play next');
-    await startMusic();
+
+    return tempSong;
   }
 
   @override
@@ -168,9 +168,9 @@ class _HomeScreenState extends State<HomeScreen>
               future: getSongs(),
               builder: (context, futureSnapshot) {
                 if (futureSnapshot.hasData) {
-                  if (audioPlayer.state == AudioPlayerState.COMPLETED) {
-                    print('inside future builder');
-//                    playNext();
+                  if (audioPlayer.state == AudioPlayerState.COMPLETED ||
+                      audioPlayer.state == AudioPlayerState.STOPPED) {
+                    playNext();
                     return Container(
                       child: Text(
                         'Binge Music',
@@ -233,11 +233,6 @@ class _HomeScreenState extends State<HomeScreen>
                                     isPlaying = true;
                                     startRotation();
                                   });
-                                } else if (audioPlayer.state ==
-                                    AudioPlayerState.COMPLETED) {
-                                  playNext();
-                                  isPlaying = true;
-                                  startRotation();
                                 } else {
                                   await startMusic();
                                   isPlaying = true;
@@ -386,8 +381,7 @@ class _HomeScreenState extends State<HomeScreen>
                               } else {
                                 if (audioPlayer.state ==
                                     AudioPlayerState.COMPLETED) {
-                                  print('inside stream builder');
-                                  playNext();
+                                  // playNext();
                                 }
                                 return Row(
                                   children: <Widget>[
@@ -511,6 +505,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   shape: CircleBorder(),
                                   onPressed: () async {
                                     _getVibration(FeedbackType.light);
+                                    await audioPlayer.pause();
                                     playNext();
                                   },
                                   child: Icon(
@@ -588,12 +583,7 @@ class Song {
   SongInfo song;
   String songName;
   String artistName;
-  String albumArt;
   String localPath;
 
-  Song({
-    this.song,
-    this.songName,
-    this.artistName,
-  });
+  Song({this.song, this.songName, this.artistName, this.localPath});
 }
