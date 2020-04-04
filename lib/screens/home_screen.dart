@@ -28,7 +28,6 @@ class _HomeScreenState extends State<HomeScreen>
   double tempSeconds;
   double tempMinutes;
   bool isStart = false;
-  Duration songDuration;
   double duration = 500;
   bool isPlaying = false;
   double value = 0.0;
@@ -103,19 +102,19 @@ class _HomeScreenState extends State<HomeScreen>
             audioPlayer.state == AudioPlayerState.PLAYING) {
           return song;
         } else if (audioPlayer.state == AudioPlayerState.COMPLETED) {
+          print('future completed');
           playNext();
           return song;
-        } else if (audioPlayer.state == AudioPlayerState.STOPPED) {
-          startMusic();
-          return song;
-        } else {
-          song.song = songs[_random.nextInt(songsLength)];
-          song.localPath = song.song.filePath;
+        }
+        else {
           setState(() {
+            song.song = songs[_random.nextInt(songsLength)];
+            song.localPath = song.song.filePath;
+
             song.artistName = song.song.artist;
             song.songName = song.song.artist;
           });
-          audioPlayer.setUrl(song.localPath, isLocal: true);
+
           return song;
         }
       }
@@ -131,8 +130,6 @@ class _HomeScreenState extends State<HomeScreen>
       isStart = true;
       setState(() {
         isPlaying = true;
-        songDuration = Duration(
-            seconds: tempSeconds.toInt(), minutes: tempMinutes.toInt());
       });
     }
   }
@@ -147,25 +144,17 @@ class _HomeScreenState extends State<HomeScreen>
         _song.isAlarm ||
         _song.isPodcast ||
         _song.isRingtone);
-    if (audioPlayer.state == AudioPlayerState.COMPLETED) {
-      setState(() {
-        song.song = _song;
-        song.localPath = song.song.filePath;
-        isPlaying = true;
-        song.artistName = song.song.artist;
-        song.songName = song.song.title;
-      });
-      startRotation();
-    } else {
+
+    startRotation();
+    setState(() {
       song.song = _song;
       song.localPath = song.song.filePath;
       isPlaying = true;
       song.artistName = song.song.artist;
       song.songName = song.song.title;
-      startRotation();
-      setState(() {});
-    }
-    startMusic();
+    });
+    print('play next');
+    await startMusic();
   }
 
   @override
@@ -180,7 +169,8 @@ class _HomeScreenState extends State<HomeScreen>
               builder: (context, futureSnapshot) {
                 if (futureSnapshot.hasData) {
                   if (audioPlayer.state == AudioPlayerState.COMPLETED) {
-                    playNext();
+                    print('inside future builder');
+//                    playNext();
                     return Container(
                       child: Text(
                         'Binge Music',
@@ -304,57 +294,101 @@ class _HomeScreenState extends State<HomeScreen>
                                             color: Colors.white),
                                       ),
                                     ),
-                                    Expanded(
-                                      child: SliderTheme(
-                                        data: SliderTheme.of(context).copyWith(
-                                          activeTrackColor: Colors.red[700],
-                                          inactiveTrackColor: Colors.grey,
-                                          trackHeight: 3.0,
-                                          thumbColor: Colors.redAccent,
-                                          thumbShape: RoundSliderThumbShape(
-                                              enabledThumbRadius: 12.0),
-                                          overlayColor:
-                                              Colors.red.withAlpha(32),
-                                          overlayShape: RoundSliderOverlayShape(
-                                              overlayRadius: 24.0),
-                                        ),
-                                        child: Slider(
-                                          min: 0,
-                                          max: double.parse(
-                                                      song.song.duration) >
-                                                  0
-                                              ? double.parse(song.song.duration)
-                                              : 500,
-                                          value: snapshot.data.inMilliseconds
-                                                      .ceilToDouble() >
-                                                  Duration(seconds: 0)
-                                                      .inMilliseconds
-                                                      .ceilToDouble()
-                                              ? snapshot.data.inMilliseconds
-                                                  .ceilToDouble()
-                                              : 200,
-                                          onChanged: (v) async {
-                                            stopRotation();
-                                            setState(() {
-                                              isPlaying = false;
-                                            });
-                                            await audioPlayer.pause();
-                                            await audioPlayer.seek(Duration(
-                                                milliseconds: v.toInt()));
-                                            await audioPlayer.resume();
-                                            startRotation();
-                                            setState(() {
-                                              isPlaying = true;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ),
+                                    snapshot.data.inMilliseconds
+                                                .ceilToDouble() <
+                                            double.parse(song.song.duration)
+                                        ? Expanded(
+                                            child: SliderTheme(
+                                              data: SliderTheme.of(context)
+                                                  .copyWith(
+                                                activeTrackColor:
+                                                    Colors.red[700],
+                                                inactiveTrackColor: Colors.grey,
+                                                trackHeight: 3.0,
+                                                thumbColor: Colors.redAccent,
+                                                thumbShape:
+                                                    RoundSliderThumbShape(
+                                                        enabledThumbRadius:
+                                                            12.0),
+                                                overlayColor:
+                                                    Colors.red.withAlpha(32),
+                                                overlayShape:
+                                                    RoundSliderOverlayShape(
+                                                        overlayRadius: 24.0),
+                                              ),
+                                              child: Slider(
+                                                min: 0,
+                                                max: double.parse(song
+                                                            .song.duration) >
+                                                        0
+                                                    ? double.parse(
+                                                        song.song.duration)
+                                                    : 500,
+                                                value: snapshot
+                                                            .data.inMilliseconds
+                                                            .ceilToDouble() >
+                                                        Duration(seconds: 0)
+                                                            .inMilliseconds
+                                                            .ceilToDouble()
+                                                    ? snapshot
+                                                        .data.inMilliseconds
+                                                        .ceilToDouble()
+                                                    : 200,
+                                                onChanged: (v) async {
+                                                  stopRotation();
+                                                  setState(() {
+                                                    isPlaying = false;
+                                                  });
+                                                  await audioPlayer.pause();
+                                                  await audioPlayer.seek(
+                                                      Duration(
+                                                          milliseconds:
+                                                              v.toInt()));
+                                                  await audioPlayer.resume();
+                                                  startRotation();
+                                                  setState(() {
+                                                    isPlaying = true;
+                                                  });
+                                                },
+                                              ),
+                                            ),
+                                          )
+                                        : Expanded(
+                                            child: SliderTheme(
+                                              data: SliderTheme.of(context)
+                                                  .copyWith(
+                                                activeTrackColor:
+                                                    Colors.red[700],
+                                                inactiveTrackColor:
+                                                    Colors.red[100],
+                                                trackHeight: 3.0,
+                                                thumbColor: Colors.redAccent,
+                                                thumbShape:
+                                                    RoundSliderThumbShape(
+                                                        enabledThumbRadius:
+                                                            12.0),
+                                                overlayColor:
+                                                    Colors.red.withAlpha(32),
+                                                overlayShape:
+                                                    RoundSliderOverlayShape(
+                                                        overlayRadius: 24.0),
+                                              ),
+                                              child: Slider(
+                                                onChanged: (v) {},
+                                                min: 0,
+                                                max: 50,
+                                                value: 2,
+                                              ),
+                                            ),
+                                          ),
                                   ],
                                 );
                               } else {
                                 if (audioPlayer.state ==
-                                    AudioPlayerState.COMPLETED) playNext();
+                                    AudioPlayerState.COMPLETED) {
+                                  print('inside stream builder');
+                                  playNext();
+                                }
                                 return Row(
                                   children: <Widget>[
                                     Text('0:0',
@@ -398,12 +432,16 @@ class _HomeScreenState extends State<HomeScreen>
                                   shape: CircleBorder(),
                                   onPressed: () async {
                                     _getVibration(FeedbackType.light);
-                                    await audioPlayer.stop();
+                                    await audioPlayer.pause();
+
                                     setState(() {
                                       isPlaying = false;
                                     });
                                     stopRotation();
-                                    await startMusic();
+                                    //await startMusic();
+                                    await audioPlayer
+                                        .seek(Duration(seconds: 0));
+                                    await audioPlayer.resume();
                                     setState(() {
                                       isPlaying = true;
                                     });
