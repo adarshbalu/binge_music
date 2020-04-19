@@ -1,6 +1,15 @@
-# bingemusic
+# BingeMusic
 
 A Minimal Music Player .
+
+
+## Interface
+### Loading
+![LoadingPage](https://github.com/adarshbalu/binge_music/blob/master/loading.png?raw=true)
+### Player
+![Player](https://github.com/adarshbalu/binge_music/blob/master/player.png?raw=true)
+
+
 
 ## Getting Started
 
