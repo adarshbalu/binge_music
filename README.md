@@ -5,9 +5,12 @@ A Minimal Music Player .
 
 ## Interface
 ### Loading
-![LoadingPage](https://github.com/adarshbalu/binge_music/blob/master/loading.png?raw=true)
+<img src="https://github.com/adarshbalu/binge_music/blob/master/loading.png?raw=true" width="350" height="500">
+
 ### Player
-![Player](https://github.com/adarshbalu/binge_music/blob/master/player.png?raw=true)
+
+<img src="https://github.com/adarshbalu/binge_music/blob/master/player.png?raw=true" width="350" height="500">
+
 
 
 
