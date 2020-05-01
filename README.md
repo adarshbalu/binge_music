@@ -10,10 +10,8 @@ Binge Music is a random music player that selects songs randomly from the users 
 - Selects and plays songs automatically
 
 ## Screenshots
-
-
-<img src="https://github.com/adarshbalu/binge_music/blob/master/loading.png?raw=true" width="350" height="500" align="left">
-<img src="https://github.com/adarshbalu/binge_music/blob/master/player.png?raw=true" width="350" height="500" align="center">
+<img src="https://github.com/adarshbalu/binge_music/blob/master/loading.png?raw=true" width="350" height="480" align="left">
+<img src="https://github.com/adarshbalu/binge_music/blob/master/player.png?raw=true" width="350" height="480" align="center">
 
 ## Permissions
 
