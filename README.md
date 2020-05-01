@@ -1,17 +1,13 @@
 # Binge Music 
-
 Binge Music is a random music player that selects songs randomly from the users device and plays them.
-
 ## Features :
-
 - Completely ad-free.
 - Has a minimal user interface.
 - No need to add songs to play-lists
 - Selects and plays songs automatically
-
 ## Screenshots
-<img src="https://github.com/adarshbalu/binge_music/blob/master/loading.png?raw=true" width="350" height="480" align="left">
-<img src="https://github.com/adarshbalu/binge_music/blob/master/player.png?raw=true" width="350" height="480" align="center">
+<img src="https://github.com/adarshbalu/binge_music/blob/master/loading.png?raw=true" width="350" height="470" align="left">
+<img src="https://github.com/adarshbalu/binge_music/blob/master/player.png?raw=true" width="350" height="470" align="center">
 
 ## Permissions
 
