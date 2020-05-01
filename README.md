@@ -1,18 +1,44 @@
-# BingeMusic
+# Binge Music 
 
-A Minimal Music Player .
+Binge Music is free and Open Source, Cross Platform Application developed using [Flutter](https://github.com/flutter/flutter).
+
+## About
+
+Binge Music is a random music player that selects songs randomly from the users device and plays them.
 
 
-## Interface
-### Loading
+## Features :
+
+- Completely ad-free.
+- Has a minimal user interface.
+- No need to add songs to play-lists
+- Selects and plays songs automatically
+
+## Screenshots
+
+### Loading 
+
 <img src="https://github.com/adarshbalu/binge_music/blob/master/loading.png?raw=true" width="350" height="500">
 
 ### Player
 
 <img src="https://github.com/adarshbalu/binge_music/blob/master/player.png?raw=true" width="350" height="500">
 
+## Permissions
 
+On Android versions prior to Android 6.0, Binge Music requires the following permissions:
+- File acces - Storage permissions
 
+To get the songs from the user's device.
+
+## Contributing
+
+Binge Music is a free and open source project. Any contributions are welcome. Here are a few ways you can help:
+ * [Report bugs and make suggestions.](https://github.com/adarshbalu/binge_music/issues)
+ * [Open a pull Request](https://github.com/adarshbalu/binge_music/pulls)
+ 
+
+<hr>
 
 ## Getting Started
 
