@@ -2,6 +2,10 @@
 
 Binge Music is free and Open Source, Cross Platform Application developed using [Flutter](https://github.com/flutter/flutter).
 
+## Download the App
+[<img src="https://image.flaticon.com/icons/svg/443/443049.svg" align="center"
+width="60" hspace="10" height="60" vspace="10">](http://www.mediafire.com/file/oq86py5llms74ml/BingeMusic.apk/file)
+
 ## About
 
 Binge Music is a random music player that selects songs randomly from the users device and plays them.
